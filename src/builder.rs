@@ -160,7 +160,10 @@ impl Builder {
         T: EntityTrait,
         <T as EntityTrait>::Model: Sync,
         <T as EntityTrait>::Model: IntoActiveModel<A>,
-        A: ActiveModelTrait<Entity = T> + sea_orm::ActiveModelBehavior + std::marker::Send,
+        A: ActiveModelTrait<Entity = T>
+            + sea_orm::ActiveModelBehavior
+            + std::marker::Send
+            + std::any::Any,
     {
         let entity_object_builder = EntityObjectBuilder {
             context: self.context,

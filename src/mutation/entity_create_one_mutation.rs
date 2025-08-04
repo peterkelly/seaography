@@ -61,7 +61,10 @@ impl EntityCreateOneMutationBuilder {
         T: EntityTrait,
         <T as EntityTrait>::Model: Sync,
         <T as EntityTrait>::Model: IntoActiveModel<A>,
-        A: ActiveModelTrait<Entity = T> + sea_orm::ActiveModelBehavior + std::marker::Send,
+        A: ActiveModelTrait<Entity = T>
+            + sea_orm::ActiveModelBehavior
+            + std::marker::Send
+            + std::any::Any,
     {
         let entity_input_builder = EntityInputBuilder {
             context: self.context,
@@ -76,6 +79,7 @@ impl EntityCreateOneMutationBuilder {
         let guard = self.context.guards.entity_guards.get(&object_name);
         let field_guards = &self.context.guards.field_guards;
         let hooks = &self.context.hooks;
+        let mutation_hooks = &self.context.mutation_hooks;
 
         Field::new(
             self.type_name::<T>(),
@@ -117,11 +121,19 @@ impl EntityCreateOneMutationBuilder {
                         }
                     }
 
-                    let active_model = prepare_active_model::<T, A>(
+                    let mut active_model = prepare_active_model::<T, A>(
                         &entity_input_builder,
                         &entity_object_builder,
                         input_object,
                     )?;
+
+                    if let Some(hook) = mutation_hooks.get(&active_model.type_id()) {
+                        if let GuardAction::Block(reason) =
+                            hook.mutation(&ctx, &mut active_model, OperationType::Create)
+                        {
+                            return Err(guard_error(reason, "Mutation guard triggered."));
+                        }
+                    }
 
                     let result = active_model.insert(db).await?;
 

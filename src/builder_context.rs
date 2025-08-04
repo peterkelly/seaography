@@ -6,6 +6,7 @@ use crate::{
     OrderInputConfig, PageInfoObjectConfig, PageInputConfig, PaginationInfoObjectConfig,
     PaginationInputConfig,
 };
+use std::{any::TypeId, collections::BTreeMap};
 
 pub mod guards;
 pub use guards::*;
@@ -54,6 +55,18 @@ pub struct BuilderContext {
 
     pub guards: GuardsConfig,
     pub hooks: LifecycleHooks,
+    pub mutation_hooks: BTreeMap<TypeId, DynamicMutationHooks>,
     pub types: TypesMapConfig,
     pub filter_types: FilterTypesMapConfig,
+}
+
+impl BuilderContext {
+    pub fn register_mutation_hook<A>(&mut self)
+    where
+        A: MutationHooksInterface + Default,
+    {
+        let a: A = Default::default();
+        self.mutation_hooks
+            .insert(a.type_id(), DynamicMutationHooks::new(a));
+    }
 }

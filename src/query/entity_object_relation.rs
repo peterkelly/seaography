@@ -9,7 +9,7 @@ use crate::{
     apply_guard, apply_memory_pagination, get_filter_conditions, guard_error, pluralize_unique,
     BuilderContext, Connection, ConnectionObjectBuilder, EntityObjectBuilder, FilterInputBuilder,
     GuardAction, HashableGroupKey, KeyComplex, OneToManyLoader, OneToOneLoader, OperationType,
-    OrderInputBuilder, PaginationInputBuilder,
+    OrderInputBuilder, PaginationInputBuilder, try_downcast_field_value,
 };
 
 /// This builder produces a GraphQL field for an SeaORM entity relationship
@@ -92,12 +92,7 @@ impl EntityObjectRelationBuilder {
                         return Err(guard_error(reason, "Field guard triggered."));
                     }
 
-                    let Ok(parent) = ctx.parent_value.try_downcast_ref::<T::Model>() else {
-                        return Err(async_graphql::Error::new(format!(
-                            "Failed to downcast object to {}",
-                            entity_object_builder.type_name::<T>()
-                        )));
-                    };
+                    let parent = try_downcast_field_value::<T::Model>(ctx.parent_value)?;
 
                     let loader = ctx.data_unchecked::<DataLoader<OneToOneLoader<R>>>();
 
@@ -157,12 +152,7 @@ impl EntityObjectRelationBuilder {
                             return Err(guard_error(reason, "Field guard triggered."));
                         }
 
-                        let Ok(parent) = ctx.parent_value.try_downcast_ref::<T::Model>() else {
-                            return Err(async_graphql::Error::new(format!(
-                                "Failed to downcast object to {}",
-                                entity_object_builder.type_name::<T>()
-                            )));
-                        };
+                        let parent = try_downcast_field_value::<T::Model>(ctx.parent_value)?;
 
                         let loader = ctx.data_unchecked::<DataLoader<OneToManyLoader<R>>>();
 

@@ -1,4 +1,6 @@
 use itertools::Itertools;
+use std::any::Any;
+use async_graphql::dynamic::FieldValue;
 
 /// used to encode the primary key values of a SeaORM entity to a String
 pub fn encode_cursor(values: Vec<sea_orm::Value>) -> String {
@@ -302,4 +304,14 @@ pub fn pluralize_unique(word: &str, _plural: bool) -> String {
 
 fn parse_int_err(err: std::num::ParseIntError) -> sea_orm::DbErr {
     sea_orm::DbErr::Type(format!("Failed to parse integer: {err}"))
+}
+
+pub fn try_downcast_field_value<'a, T: Any>(value: &'a FieldValue<'a>) -> async_graphql::Result<&'a T> {
+    match value.downcast_ref::<T>() {
+        Some(obj) => Ok(obj),
+        None => match value.downcast_ref::<Option<T>>() {
+            Some(Some(obj)) => Ok(obj),
+            _ => Err(format!("Failed to downcast FieldValue {:?} to {}", value, std::any::type_name::<T>()).into()),
+        },
+    }
 }

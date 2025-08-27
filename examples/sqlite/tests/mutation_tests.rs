@@ -33,7 +33,7 @@ async fn test_simple_insert_one() {
             .execute(
                 r#"
                 {
-                    filmActor(filters: { lastUpdate: { gt: "2022-11-14 10:30:12 UTC" } }) {
+                    filmActor(filters: { lastUpdate: { gt: "2022-11-14T10:30:12+00:00" } }) {
                       nodes {
                         actorId
                         filmId
@@ -57,7 +57,7 @@ async fn test_simple_insert_one() {
             .execute(
                 r#"
                 mutation {
-                    filmActorCreateOne(data: { actorId: 1, filmId: 2,  lastUpdate: "2030-01-01 11:11:11 UTC"}) {
+                    filmActorCreateOne(data: { actorId: 1, filmId: 2,  lastUpdate: "2030-01-01T11:11:11+00:00"}) {
                       actorId
                       filmId
                          __typename
@@ -82,7 +82,7 @@ async fn test_simple_insert_one() {
             .execute(
                 r#"
                 {
-                    filmActor(filters: { lastUpdate: { gt: "2022-11-14 10:30:12 UTC" } }) {
+                    filmActor(filters: { lastUpdate: { gt: "2022-11-14T10:30:12+00:00" } }) {
                       nodes {
                         actorId
                         filmId
@@ -147,12 +147,12 @@ async fn test_complex_insert_one() {
                     rentalCreateOne(
                       data: {
                         rentalId: 16050
-                        rentalDate: "2030-01-01 11:11:11 UTC"
+                        rentalDate: "2030-01-01T11:11:11+00:00"
                         inventoryId: 4452
                         customerId: 319
-                        returnDate: "2030-01-01 11:11:11 UTC"
+                        returnDate: "2030-01-01T11:11:11+00:00"
                         staffId: 1
-                        lastUpdate: "2030-01-01 11:11:11 UTC"
+                        lastUpdate: "2030-01-01T11:11:11+00:00"
                       }
                     ) {
                       rentalId
@@ -171,10 +171,10 @@ async fn test_complex_insert_one() {
             {
                 "rentalCreateOne": {
                     "rentalId": 16050,
-                    "rentalDate": "2030-01-01 11:11:11 UTC",
+                    "rentalDate": "2030-01-01T11:11:11+00:00",
                     "inventoryId": 4452,
                     "customerId": 319,
-                    "returnDate": "2030-01-01 11:11:11 UTC",
+                    "returnDate": "2030-01-01T11:11:11+00:00",
                     "staffId": 1
                 }
             }
@@ -206,10 +206,10 @@ async fn test_complex_insert_one() {
               "nodes": [
                 {
                   "rentalId": 16050,
-                  "rentalDate": "2030-01-01 11:11:11 UTC",
+                  "rentalDate": "2030-01-01T11:11:11+00:00",
                   "inventoryId": 4452,
                   "customerId": 319,
-                  "returnDate": "2030-01-01 11:11:11 UTC",
+                  "returnDate": "2030-01-01T11:11:11+00:00",
                   "staffId": 1
                 }
               ]

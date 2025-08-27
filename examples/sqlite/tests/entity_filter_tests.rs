@@ -88,10 +88,17 @@ pub fn assert_eq(a: Response, b: &str) {
 async fn only_store_2() {
     let schema = get_schema().await;
 
-    #[cfg(feature = "field-pluralize")]
-    let stores_name = "stores";
-    #[cfg(not(feature = "field-pluralize"))]
-    let stores_name = "store";
+    let stores_name = if cfg!(feature = "field-pluralize") {
+        "stores"
+    } else {
+        "store"
+    };
+
+    let staff_name = if cfg!(feature = "field-pluralize") {
+        "staff_single"
+    } else {
+        "staff"
+    };
 
     let query = format!(
         "
@@ -102,7 +109,7 @@ async fn only_store_2() {
             address {{
               address
             }}
-            manager {{
+            {staff_name} {{
               storeId
               firstName
               lastName
@@ -123,7 +130,7 @@ async fn only_store_2() {
                     "address": {
                         "address": "28 MySQL Boulevard"
                     },
-                    "manager": {
+                    staff_name: {
                         "storeId": 2,
                         "firstName": "Jon",
                         "lastName": "Stephens"
@@ -133,10 +140,11 @@ async fn only_store_2() {
         })
     );
 
-    #[cfg(feature = "field-pluralize")]
-    let customers_name = "customers";
-    #[cfg(not(feature = "field-pluralize"))]
-    let customers_name = "customer";
+    let customers_name = if cfg!(feature = "field-pluralize") {
+        "customers"
+    } else {
+        "customer"
+    };
 
     let query = format!(
         "

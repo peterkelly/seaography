@@ -189,12 +189,10 @@ impl EntityObjectBuilder {
                         return FieldFuture::new(async move { result });
                     }
 
-                    FieldFuture::new(async move {
-                        Ok(sea_query_value_to_graphql_value(
-                            object.get(column),
-                            is_enum,
-                        ))
-                    })
+                    FieldFuture::from_value(sea_query_value_to_graphql_value(
+                        object.get(column),
+                        is_enum,
+                    ))
                 });
 
                 object.field(field)
@@ -230,7 +228,13 @@ impl EntityObjectBuilder {
                     &column, &value,
                 )?;
 
-            active_model.set(column, value);
+            active_model.try_set(column, value).map_err(|e| {
+                let entity_name = entity_object_builder.type_name::<<M as ModelTrait>::Entity>();
+                SeaographyError::TypeConversionError(
+                    e.to_string(),
+                    format!("{entity_name} - {column_name}"),
+                )
+            })?;
         }
 
         active_model.try_into_model().map_err(|e| {
@@ -242,7 +246,7 @@ impl EntityObjectBuilder {
     }
 }
 
-fn sea_query_value_to_graphql_value(
+pub(crate) fn sea_query_value_to_graphql_value(
     sea_query_value: sea_orm::sea_query::Value,
     is_enum: bool,
 ) -> Option<Value> {

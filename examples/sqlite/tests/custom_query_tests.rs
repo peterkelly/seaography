@@ -112,6 +112,41 @@ async fn test_custom_query_with_pagination() {
 }
 
 #[tokio::test]
+async fn test_custom_query_many() {
+    let schema = get_schema().await;
+
+    assert_eq(
+        schema
+            .execute(
+                r#"
+                {
+                  many_rental {
+                    rentalId
+                  }
+                }
+                "#,
+            )
+            .await,
+        r#"
+        {
+          "many_rental": [
+            { "rentalId": 1 },
+            { "rentalId": 2 },
+            { "rentalId": 3 },
+            { "rentalId": 4 },
+            { "rentalId": 5 },
+            { "rentalId": 6 },
+            { "rentalId": 7 },
+            { "rentalId": 8 },
+            { "rentalId": 9 },
+            { "rentalId": 10 }
+          ]
+        }
+        "#,
+    );
+}
+
+#[tokio::test]
 async fn test_custom_query_with_no_pagination() {
     let schema = get_schema().await;
 
@@ -399,5 +434,52 @@ async fn option_entity_object_via_relation_not_owner() {
         json!({
             "staff_by_id": null
         })
+    );
+}
+
+#[tokio::test]
+async fn test_custom_query_with_custom_output() {
+    let schema = get_schema().await;
+
+    assert_eq(
+        schema
+            .execute(
+                r#"
+                {
+                  purchase_order {
+                    po_number
+                    lineitems {
+                      product
+                      quantity
+                      size {
+                        size
+                      }
+                    }
+                  }
+                }
+                "#,
+            )
+            .await,
+        r#"
+        {
+          "purchase_order": {
+            "po_number": "AB1234",
+            "lineitems": [
+              {
+                "product": "Towel",
+                "quantity": 2.0,
+                "size": {
+                  "size": 4
+                }
+              },
+              {
+                "product": "Soap",
+                "quantity": 2.5,
+                "size": null
+              }
+            ]
+          }
+        }
+        "#,
     );
 }

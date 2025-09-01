@@ -112,6 +112,7 @@ impl EntityQueryFieldBuilder {
             types_helper.input_type_for_column::<T>(&column, &entity_name, &column_name, true);
 
         let iv = InputValue::new("id", converted_type.expect("primary key to be supported"));
+        let context = self.context;
 
         Field::new(
             self.type_name::<T>(),
@@ -129,7 +130,7 @@ impl EntityQueryFieldBuilder {
                     }
 
                     let mut stmt = T::find();
-                    let mapper = ctx.data::<crate::TypesMapHelper>()?;
+                    let mapper = TypesMapHelper { context };
                     let column = T::PrimaryKey::iter()
                         .map(|variant| variant.into_column())
                         .collect::<Vec<T::Column>>()[0];

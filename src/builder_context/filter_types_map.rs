@@ -50,6 +50,7 @@ impl std::default::Default for FilterTypesMapConfig {
                     FilterOperation::GreaterThanEquals,
                     FilterOperation::LessThan,
                     FilterOperation::LessThanEquals,
+                    FilterOperation::CaseInsensitiveEquals,
                     FilterOperation::IsIn,
                     FilterOperation::IsNotIn,
                     FilterOperation::IsNull,
@@ -59,6 +60,7 @@ impl std::default::Default for FilterTypesMapConfig {
                     FilterOperation::EndsWith,
                     FilterOperation::Like,
                     FilterOperation::NotLike,
+                    FilterOperation::CaseInsensitiveLike,
                     FilterOperation::Between,
                     FilterOperation::NotBetween,
                 ]),
@@ -437,6 +439,9 @@ impl FilterTypesMapHelper {
                     FilterOperation::LessThanEquals => {
                         InputValue::new("lte", TypeRef::named(filter_info.base_type.clone()))
                     }
+                    FilterOperation::CaseInsensitiveEquals => {
+                        InputValue::new("ci_eq", TypeRef::named(filter_info.base_type.clone()))
+                    }
                     FilterOperation::IsIn => InputValue::new(
                         "is_in",
                         TypeRef::named_nn_list(filter_info.base_type.clone()),
@@ -480,6 +485,13 @@ impl FilterTypesMapHelper {
                     }
                     FilterOperation::NotLike => {
                         InputValue::new("not_like", TypeRef::named(filter_info.base_type.clone()))
+                    }
+                    FilterOperation::CaseInsensitiveLike => {
+                        if self.context.entity_query_field.use_ilike {
+                            InputValue::new("ilike", TypeRef::named(filter_info.base_type.clone()))
+                        } else {
+                            return object;
+                        }
                     }
                     FilterOperation::Between => InputValue::new(
                         "between",
@@ -620,6 +632,17 @@ impl FilterTypesMapHelper {
                         condition = condition.add(column.lte(value));
                     }
                 }
+                FilterOperation::CaseInsensitiveEquals => {
+                    use sea_orm::sea_query::{Expr, ExprTrait, Func, SimpleExpr};
+                    if let Some(value) = filter.get("ci_eq") {
+                        let value = types_map_helper
+                            .async_graphql_value_to_sea_orm_value::<T>(column, &value)?;
+                        condition = condition.add(
+                            Func::lower(Expr::col(*column))
+                                .eq(SimpleExpr::FunctionCall(Func::lower(value))),
+                        );
+                    }
+                }
                 FilterOperation::IsIn => {
                     if let Some(value) = filter.get("is_in") {
                         let value = value
@@ -712,7 +735,23 @@ impl FilterTypesMapHelper {
                     if let Some(value) = filter.get("not_like") {
                         let value = types_map_helper
                             .async_graphql_value_to_sea_orm_value::<T>(column, &value)?;
-                        condition = condition.add(column.not_like(value.to_string()));
+                        let s = match value {
+                            sea_orm::sea_query::Value::String(Some(s)) => s.to_string(),
+                            _ => value.to_string(),
+                        };
+                        condition = condition.add(column.not_like(s));
+                    }
+                }
+                FilterOperation::CaseInsensitiveLike => {
+                    use sea_orm::sea_query::{extension::postgres::PgExpr, Expr};
+                    if let Some(value) = filter.get("ilike") {
+                        let value = types_map_helper
+                            .async_graphql_value_to_sea_orm_value::<T>(column, &value)?;
+                        let s = match value {
+                            sea_orm::sea_query::Value::String(Some(s)) => s.to_string(),
+                            _ => value.to_string(),
+                        };
+                        condition = condition.add(Expr::col(*column).ilike(s));
                     }
                 }
                 FilterOperation::Between => {
@@ -814,6 +853,7 @@ pub enum FilterOperation {
     GreaterThanEquals,
     LessThan,
     LessThanEquals,
+    CaseInsensitiveEquals,
     IsIn,
     IsNotIn,
     IsNull,
@@ -823,6 +863,7 @@ pub enum FilterOperation {
     EndsWith,
     Like,
     NotLike,
+    CaseInsensitiveLike,
     Between,
     NotBetween,
     ArrayContains,
